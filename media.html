@@ -1,0 +1,50 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Prototipo de media fidelidad · Notas del docente</title>
+<style>
+:root{--bg:#f3f5f8;--card:#fff;--ink:#1f2937;--mut:#6b7280;--line:#d5dbe3;--pri:#2f5fb3;--ok:#1b7f4b;--err:#b42318;--warn:#a15c07;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13171d;--card:#1c222b;--ink:#e6e9ee;--mut:#9aa4b2;--line:#303a47;--pri:#7fa6ee;--ok:#4cc38a;--err:#ff8a80;--warn:#f0b35a}}
+:root[data-theme="dark"]{--bg:#13171d;--card:#1c222b;--ink:#e6e9ee;--mut:#9aa4b2;--line:#303a47;--pri:#7fa6ee;--ok:#4cc38a;--err:#ff8a80;--warn:#f0b35a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,Arial,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+.tag{font-size:12px;color:var(--mut);letter-spacing:.06em}
+h1{margin:2px 0 12px;font-size:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;flex:1;min-width:120px}.bar i{display:block;height:100%;background:var(--pri);width:0;transition:width .3s}
+.r{display:grid;grid-template-columns:1fr 90px 100px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+input,textarea{font:inherit;color:var(--ink);background:var(--bg);border:2px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;box-sizing:border-box}
+input.bad{border-color:var(--err)}
+.msg{grid-column:1/-1;color:var(--err);font-size:13px;margin-top:-4px}
+.chip{font-size:12px;padding:3px 8px;border-radius:12px;border:1px solid var(--line);text-align:center}
+.chip.borrador{color:var(--warn);border-color:var(--warn)}.chip.guardado{color:var(--ok);border-color:var(--ok)}
+button{font:inherit;border-radius:8px;border:1px solid var(--pri);padding:9px 16px;cursor:pointer;background:var(--pri);color:#fff}
+button.sec{background:transparent;color:var(--pri)}button:disabled{opacity:.45;cursor:not-allowed}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ok);color:#fff;padding:10px 16px;border-radius:8px;display:none}
+ul{margin:6px 0 0;padding-left:18px;font-size:14px;color:var(--mut)}
+</style></head><body><main>
+<div class="tag">MEDIA FIDELIDAD · interacciones y validación</div>
+<h1>Registro de notas · Grupo A</h1>
+<div class="card top"><b id="cnt">0 / 6 guardadas</b><div class="bar"><i id="pg"></i></div></div>
+<div class="card" id="tb"></div>
+<div class="card"><label for="obs"><b>Observaciones</b> <small id="oc" style="color:var(--mut)">0 / 200</small></label>
+<textarea id="obs" rows="3" maxlength="200" placeholder="Retroalimentación general del grupo"></textarea></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button id="sv" disabled>Guardar notas</button><button class="sec" id="un" disabled>Deshacer último guardado</button></div>
+<div class="card" style="margin-top:12px"><b>Historial</b><ul id="hs"><li>Sin cambios aún.</li></ul></div>
+<div class="toast" id="ts" role="status"></div>
+<script>
+const N=["Ana Beltrán","Camilo Rojas","Daniela Pardo","Esteban Ruiz","Fabiola Mora","Gabriel Soto"];
+let st=N.map(n=>({n,v:"",s:"pendiente"})),prev=null,hist=[];
+const $=id=>document.getElementById(id);
+const chk=v=>{if(v==="")return null;const x=parseFloat(v.replace(",","."));return !isNaN(x)&&x>=0&&x<=5};
+$("tb").innerHTML=st.map((r,i)=>`<div class="r"><span>${r.n}</span><input id="i${i}" inputmode="decimal" placeholder="0.0 - 5.0" aria-label="Nota de ${r.n}"><span class="chip" id="c${i}">pendiente</span><div class="msg" id="m${i}" hidden>La nota debe estar entre 0.0 y 5.0.</div></div>`).join("");
+st.forEach((r,i)=>$("i"+i).addEventListener("input",e=>{const x=st[i];x.v=e.target.value;x.s=x.v===""?"pendiente":"borrador";ref()}));
+$("obs").addEventListener("input",e=>$("oc").textContent=e.target.value.length+" / 200");
+function ref(){let bad=false,dr=0;st.forEach((r,i)=>{const ok=chk(r.v);const b=ok===false;bad=bad||b;if(b)r.s="pendiente";$("i"+i).classList.toggle("bad",b);$("m"+i).hidden=!b;if(r.s==="borrador")dr++;const c=$("c"+i);c.textContent=r.s;c.className="chip "+r.s});
+const g=st.filter(r=>r.s==="guardado").length;$("cnt").textContent=g+" / "+st.length+" guardadas";$("pg").style.width=g/st.length*100+"%";$("sv").disabled=bad||dr===0;$("un").disabled=!prev}
+const hr=()=>new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+function toast(t){const e=$("ts");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2600)}
+$("sv").onclick=()=>{prev=JSON.parse(JSON.stringify(st));let n=0;st.forEach(r=>{if(r.s==="borrador"){r.s="guardado";n++}});hist.unshift(n+" nota(s) guardadas a las "+hr());rh();ref();toast("✓ Guardado a las "+hr())};
+$("un").onclick=()=>{st=prev;prev=null;st.forEach((r,i)=>$("i"+i).value=r.v);hist.unshift("Se deshizo el último guardado a las "+hr());rh();ref();toast("Cambio deshecho")};
+function rh(){$("hs").innerHTML=hist.map(h=>"<li>"+h+"</li>").join("")}
+ref();
+</script></main></body></html>
